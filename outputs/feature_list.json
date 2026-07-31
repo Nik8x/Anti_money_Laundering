@@ -1,0 +1,16 @@
+[
+  "n_transactions",
+  "mean_amount",
+  "std_amount",
+  "max_amount",
+  "mean_balance",
+  "std_balance",
+  "net_flow",
+  "withdrawal_ratio",
+  "tenure_days",
+  "days_since_last_transaction",
+  "transactions_per_month",
+  "n_standing_orders",
+  "total_order_amount",
+  "has_card"
+]

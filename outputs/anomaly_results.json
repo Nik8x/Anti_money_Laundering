@@ -1,0 +1,10 @@
+{
+  "n_flagged_iso": 225,
+  "n_flagged_lof": 225,
+  "n_flagged_both": 37,
+  "n_flagged_either": 413,
+  "expected_overlap_if_random": 11.250000000000002,
+  "bad_loan_rate_flagged_both": 0.16666666666666666,
+  "bad_loan_rate_not_flagged": 0.11094674556213018,
+  "bad_loan_rate_overall": 0.11143695014662756
+}

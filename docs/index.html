@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anti-Money Laundering — Behavioral Account Profiling</title>
+<meta name="description" content="Unsupervised anomaly detection and supervised loan-risk modeling on the PKDD'99 Berka Czech bank dataset.">
+<style>
+:root {
+  color-scheme: light;
+  --bg:            #fcfcfb;
+  --surface:       #ffffff;
+  --surface-2:     #f2f1ed;
+  --border:        #e3e2dc;
+  --text-primary:  #0b0b0b;
+  --text-secondary:#52514e;
+  --text-muted:    #7a7972;
+  --series-1:      #2a78d6;
+  --series-2:      #eb6834;
+  --series-3:      #1baf7a;
+  --series-4:      #eda100;
+  --good:          #0ca30c;
+  --critical:      #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg:            #131311;
+    --surface:       #1a1a19;
+    --surface-2:     #212120;
+    --border:        #34332f;
+    --text-primary:  #f5f4f0;
+    --text-secondary:#c3c2b7;
+    --text-muted:    #8f8e86;
+    --series-1:      #3987e5;
+    --series-2:      #d95926;
+    --series-3:      #199e70;
+    --series-4:      #c98500;
+    --good:          #3ecf3e;
+    --critical:      #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:            #131311;
+  --surface:       #1a1a19;
+  --surface-2:     #212120;
+  --border:        #34332f;
+  --text-primary:  #f5f4f0;
+  --text-secondary:#c3c2b7;
+  --text-muted:    #8f8e86;
+  --series-1:      #3987e5;
+  --series-2:      #d95926;
+  --series-3:      #199e70;
+  --series-4:      #c98500;
+  --good:          #3ecf3e;
+  --critical:      #e66767;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+main { max-width: 920px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+header.hero { margin-bottom: 2.5rem; }
+.eyebrow {
+  color: var(--series-1);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 0.6rem;
+}
+h1 { font-size: 1.9rem; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
+.lede { color: var(--text-secondary); font-size: 1.05rem; max-width: 68ch; }
+.repo-link { color: var(--text-muted); font-size: 0.88rem; }
+.repo-link a { color: inherit; }
+section { margin: 3rem 0; }
+h2 {
+  font-size: 1.3rem;
+  margin: 0 0 0.3rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+p { color: var(--text-secondary); }
+p.section-intro { margin-top: 0.8rem; }
+figure { margin: 1.2rem 0; }
+figure img {
+  max-width: 100%;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+figcaption { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; }
+.fig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .fig-row { grid-template-columns: 1fr; } }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 1.2rem;
+}
+.stat { background: var(--surface); padding: 1rem; }
+.stat .num { font-size: 1.5rem; font-weight: 600; }
+.stat .label { font-size: 0.78rem; color: var(--text-muted); }
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.nb-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease;
+}
+.nb-card:hover { border-color: var(--series-1); }
+.nb-num {
+  display: inline-block;
+  color: var(--series-1);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+.nb-card h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.nb-card p { margin: 0; font-size: 0.88rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; margin: 1rem 0; }
+th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+th { color: var(--text-muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.02em; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+code { background: var(--surface-2); border-radius: 4px; padding: 0.1rem 0.35rem; font-size: 0.9em; }
+.callout {
+  background: var(--surface-2);
+  border-left: 3px solid var(--series-1);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin: 1.2rem 0;
+}
+.callout.null { border-left-color: var(--text-muted); }
+ul.findings { padding-left: 1.2rem; }
+ul.findings li { margin-bottom: 0.8rem; color: var(--text-secondary); }
+ul.findings strong { color: var(--text-primary); }
+ul.future { padding-left: 1.2rem; }
+ul.future li { margin-bottom: 0.5rem; color: var(--text-secondary); }
+footer {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+a { color: var(--series-1); }
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <p class="eyebrow">Data Science Project &middot; PKDD'99 Berka Czech Bank Dataset</p>
+  <h1>Anti-Money Laundering: Behavioral Account Profiling</h1>
+  <p class="lede">
+    4,500 accounts, 682 loans, just over a million transactions (1993-1998).
+    There's no fraud/AML label anywhere in this data &mdash; it's ordinary
+    retail banking activity. Rather than manufacture a fake label, this
+    project runs unsupervised anomaly detection honestly, and puts real
+    supervised modeling where a real label exists: whether a loan was repaid.
+  </p>
+  <p class="repo-link">Source notebooks: <a href="https://github.com/Nik8x/Anti_money_Laundering">github.com/Nik8x/Anti_money_Laundering</a></p>
+</header>
+
+<section id="data">
+  <h2>The dataset at a glance</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="num">4,500</div><div class="label">Accounts</div></div>
+    <div class="stat"><div class="num">682</div><div class="label">Loans</div></div>
+    <div class="stat"><div class="num">892</div><div class="label">Cards</div></div>
+    <div class="stat"><div class="num">1.06M</div><div class="label">Transactions</div></div>
+    <div class="stat"><div class="num">11.1%</div><div class="label">Bad-loan rate</div></div>
+    <div class="stat"><div class="num">1993-98</div><div class="label">Years covered</div></div>
+  </div>
+  <div class="fig-row">
+    <figure>
+      <img src="assets/account_overview.png" alt="Loan status, card type, and disposition type bar charts">
+      <figcaption>Loan status, card type, and account disposition (owner vs. co-holder) counts.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/transaction_overview.png" alt="Transaction amount histogram and transactions per year">
+      <figcaption>Transaction amounts (log scale) and volume by year.</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <img src="assets/district_overview.png" alt="Average salary and unemployment rate by region">
+    <figcaption>Regional salary and unemployment vary a lot &mdash; worth keeping in mind before treating "unusual spending" as universal across the whole country.</figcaption>
+  </figure>
+</section>
+
+<section id="features">
+  <h2>Feature engineering</h2>
+  <p class="section-intro">
+    One row per account, built entirely with vectorized <code>groupby</code>
+    aggregation over the transaction log &mdash; counts, amounts, balance
+    behavior, tenure, recency, and standing orders.
+  </p>
+  <figure>
+    <img src="assets/feature_correlation.png" alt="Correlation heatmap between candidate account features">
+    <figcaption>Balance-related features (mean/min/max) are highly correlated with each other &mdash; only <code>mean_balance</code> and <code>std_balance</code> are kept downstream.</figcaption>
+  </figure>
+</section>
+
+<section id="anomaly">
+  <h2>Unsupervised anomaly detection</h2>
+  <p class="section-intro">
+    Isolation Forest and Local Outlier Factor, run completely independently
+    on the same scaled features, each flagging the most unusual 5% of accounts.
+  </p>
+  <figure>
+    <img src="assets/anomaly_pca.png" alt="PCA-reduced scatter plots showing anomalies flagged by each method">
+    <figcaption>Isolation Forest tends to isolate a coherent region of the feature space; Local Outlier Factor picks up more scattered density pockets &mdash; different mechanisms, worth comparing rather than picking one.</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>Metric</th><th class="num">Value</th></tr></thead>
+    <tbody>
+      <tr><td>Flagged by Isolation Forest</td><td class="num">225 (5.0%)</td></tr>
+      <tr><td>Flagged by Local Outlier Factor</td><td class="num">225 (5.0%)</td></tr>
+      <tr><td><strong>Flagged by both</strong></td><td class="num"><strong>37</strong></td></tr>
+      <tr><td>Expected overlap if independent/random</td><td class="num">~11</td></tr>
+      <tr><td>Bad-loan rate, flagged by both (of accounts with a loan)</td><td class="num">16.7%</td></tr>
+      <tr><td>Bad-loan rate, not flagged</td><td class="num">11.1%</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <strong>Two unrelated algorithms agree about 3.3x more than chance would
+    predict</strong> &mdash; real evidence of shared underlying structure, not
+    just each method's own noise. Among the minority of accounts that actually
+    have a loan, the jointly-flagged group has a modestly higher bad-loan rate
+    (16.7% vs 11.1%) &mdash; a real but partial signal, since most flagged
+    accounts never took out a loan at all and can't be checked this way.
+  </div>
+</section>
+
+<section id="modeling">
+  <h2>Supervised: predicting loan risk</h2>
+  <p class="section-intro">
+    Restricted to the 682 accounts that actually took out a loan, predicting
+    whether it went bad (not repaid / in debt, 11.1% of loans) from account
+    behavior &mdash; a real, independent outcome, unlike predicting a cluster ID
+    back from its own inputs.
+  </p>
+  <figure>
+    <img src="assets/cv_comparison.png" alt="Boxplot of 5-fold CV PR-AUC by model">
+    <figcaption>5-fold CV PR-AUC &mdash; class-weighted Logistic Regression edges out Random Forest.</figcaption>
+  </figure>
+  <table>
+    <thead><tr><th>Model</th><th class="num">CV PR-AUC</th></tr></thead>
+    <tbody>
+      <tr><td>Random-guess baseline (positive rate)</td><td class="num">0.111</td></tr>
+      <tr><td>Random Forest (balanced)</td><td class="num">0.769</td></tr>
+      <tr><td><strong>Logistic Regression (balanced)</strong></td><td class="num"><strong>0.789</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="fig-row">
+    <figure>
+      <img src="assets/loan_risk_evaluation.png" alt="Confusion matrix, ROC curve, and precision-recall curve for the loan risk model">
+      <figcaption>Test-set confusion matrix, ROC curve, and precision-recall curve.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/loan_risk_feature_importance.png" alt="Top 10 features for the loan risk model">
+      <figcaption>Average balance and its volatility dominate &mdash; well ahead of raw transaction counts.</figcaption>
+    </figure>
+  </div>
+  <p><strong>Test PR-AUC 0.847</strong> (ROC-AUC 0.962) against an 11.1%
+     baseline positive rate &mdash; a strong, honestly-obtained result: the
+     scaler is fit inside a pipeline on the training fold only, the split
+     happens before any resampling, and the metric (PR-AUC) is the one that
+     actually reflects performance on a rare positive class.</p>
+
+  <div class="callout null">
+    <strong>Loan risk and behavioral anomaly turned out to be different
+    signals.</strong> Accounts in the top 15% of predicted loan risk get
+    flagged as anomalous at almost exactly the same rate as everyone else
+    (23.1% vs 22.8%). Not every cross-check needs to confirm a story &mdash;
+    "unusual" and "risky" measuring different things is itself a useful,
+    honestly-reported result.
+  </div>
+</section>
+
+<section id="notebooks">
+  <h2>Notebooks</h2>
+  <div class="nav-grid">
+    <a class="nb-card" href="00_data_setup_eda.html">
+      <span class="nb-num">00 &middot; DATA + EDA</span>
+      <h3>Data Setup and EDA</h3>
+      <p>Downloads all 8 tables, proper left-joined account view, loan/card/district overview.</p>
+    </a>
+    <a class="nb-card" href="01_feature_engineering.html">
+      <span class="nb-num">01 &middot; FEATURES</span>
+      <h3>Feature Engineering</h3>
+      <p>Account-level transaction/balance/tenure features via vectorized groupby.</p>
+    </a>
+    <a class="nb-card" href="02_anomaly_detection.html">
+      <span class="nb-num">02 &middot; UNSUPERVISED</span>
+      <h3>Anomaly Detection</h3>
+      <p>Isolation Forest and Local Outlier Factor flagging unusual accounts, no fabricated label.</p>
+    </a>
+    <a class="nb-card" href="03_loan_risk_model.html">
+      <span class="nb-num">03 &middot; SUPERVISED</span>
+      <h3>Loan Risk Model</h3>
+      <p>Predicting bad loan outcomes from account behavior, evaluated with PR-AUC/ROC-AUC.</p>
+    </a>
+  </div>
+</section>
+
+<section id="findings">
+  <h2>Key findings</h2>
+  <ul class="findings">
+    <li><strong>Two independent anomaly-detection methods agree far more than chance would predict.</strong> Isolation Forest and Local Outlier Factor each flag 225 accounts (5%); 37 get flagged by both &mdash; about 3.3x more overlap than the ~11 expected at random.</li>
+    <li><strong>The anomaly flag has a partial, honest link to bad loan outcomes</strong> &mdash; 16.7% bad-loan rate among jointly-flagged loan accounts vs 11.1% overall, checkable only for the minority of accounts that have a loan.</li>
+    <li><strong>Predicting bad loans from account behavior works well, honestly</strong> &mdash; test PR-AUC 0.847 (ROC-AUC 0.962) against an 11.1% baseline, with average balance and its volatility as the strongest signals.</li>
+    <li><strong>Loan risk and behavioral anomaly are different signals, not proxies for each other</strong> &mdash; top-15%-risk accounts get flagged as anomalous at almost the same rate as everyone else (23.1% vs 22.8%).</li>
+  </ul>
+</section>
+
+<section id="future">
+  <h2>Future work</h2>
+  <ul class="future">
+    <li>An autoencoder reconstruction-error score as a third, differently-shaped anomaly method to compare against Isolation Forest/LOF.</li>
+    <li>Month-over-month balance/transaction-count trend features per account, rather than static aggregates &mdash; real AML detection leans heavily on <em>changes</em> in behavior.</li>
+    <li>Mine the retired <code>Financial_Transactions_Data_Analysis</code> notebook's per-table EDA (now in <code>_old/</code>) for additional features, e.g. transaction counterparty bank diversity.</li>
+  </ul>
+</section>
+
+<footer>
+  Data: PKDD'99 Financial ("Berka") dataset, via the <a href="https://github.com/jlacko/berka-dataset">jlacko/berka-dataset</a> mirror, downloaded at notebook run-time &mdash; not committed to this repository.
+  Report generated from the project's Jupyter notebooks with <code>nbconvert</code>.
+</footer>
+
+</main>
+</body>
+</html>

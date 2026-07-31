@@ -1,0 +1,14 @@
+{
+  "n_accounts": 4500,
+  "n_loans": 682,
+  "n_cards": 892,
+  "n_transactions": 1056320,
+  "loan_status_counts": {
+    "C": 403,
+    "A": 203,
+    "D": 45,
+    "B": 31
+  },
+  "pct_accounts_with_loan": 0.15155555555555555,
+  "pct_accounts_with_card": 0.19822222222222222
+}

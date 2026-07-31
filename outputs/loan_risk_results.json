@@ -1,0 +1,17 @@
+{
+  "best_model": "Logistic Regression (balanced)",
+  "cv_pr_auc_mean": {
+    "Logistic Regression (balanced)": 0.7890769011903725,
+    "Random Forest (balanced)": 0.7686476282207094
+  },
+  "test_pr_auc": 0.8473070117460697,
+  "test_roc_auc": 0.9619113573407201,
+  "test_positive_rate": 0.1111111111111111,
+  "top_features": {
+    "mean_balance": 4.157286599589541,
+    "std_balance": 2.9718904399132726,
+    "std_amount": 0.7123312170213417,
+    "max_amount": 0.5742161585816034,
+    "has_card": 0.5127355943436084
+  }
+}
