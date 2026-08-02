@@ -8129,7 +8129,7 @@ Name: count, dtype: int64</pre>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>One thing the original version of this project got wrong: chaining several <code>inner</code> merges (account + loan + card + transactions) restricts the analysis to only accounts that happen to have all of those simultaneously - a small, biased slice. Every join below is a <code>left</code> join from the full account list, so every one of the 4,500 accounts stays in the picture whether or not it has a loan or a card.</p>
+<p>One thing worth being careful about: chaining several <code>inner</code> merges (account + loan + card + transactions) restricts the analysis to only accounts that happen to have all of those simultaneously, a small, biased slice. Every join below is a <code>left</code> join from the full account list, so every one of the 4,500 accounts stays in the picture whether or not it has a loan or a card.</p>
 </div>
 </div>
 </div>
